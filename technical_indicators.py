@@ -8,10 +8,10 @@ def get_signals(df):
     df["RSI_7"] = ta.momentum.rsi(close=df["Price"], window=7)    
 
     ## RSI (14 day window)
-    df["RSI_7"] = ta.momentum.rsi(close=df["Price"], window=14)    
+    df["RSI_14"] = ta.momentum.rsi(close=df["Price"], window=14)    
 
     ## RSI (21 day window)
-    df["RSI_7"] = ta.momentum.rsi(close=df["Price"], window=21) 
+    df["RSI_21"] = ta.momentum.rsi(close=df["Price"], window=21) 
 
     ## Awesome Oscillator
     df["Awesome_Osc"] = ta.momentum.awesome_oscillator(high=df["High"], low=df["Low"], window1=5, window2=34)
