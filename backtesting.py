@@ -1,6 +1,3 @@
-import numpy as np
-import pandas as pd
-
 from dataclasses import dataclass
 
 
@@ -37,7 +34,9 @@ def backtesting(dataframe, stop_loss, take_profit, n_shares):
         for pos in active_short_positions.copy():
 
             if (pos.sl < row.Close) or (pos.tp > row.Close):
-                cash += (pos.price * n_shares) - (row.Close * n_shares * (1 + COM))
+                pnl = (pos.price - row.Close) * n_shares
+                commision = row.Close * n_shares * COM
+                cash += pnl - commision
                 active_short_positions.remove(pos)
 
         # Open Long Positions
@@ -58,6 +57,7 @@ def backtesting(dataframe, stop_loss, take_profit, n_shares):
             cost = row.Close * n_shares * COM
 
             if cash > cost:
+                cash -= cost
                 active_short_positions.append(Operation
                                               (price = row.Close,
                                                n_shares = n_shares,
@@ -83,12 +83,14 @@ def backtesting(dataframe, stop_loss, take_profit, n_shares):
 
     ## Close ALL Long Positions
     for pos in active_long_positions.copy():
-        cash += last_close * n_shares * (1 - COM)
-        active_long_positions.remove(pos)
+        pnl = (pos.price - last_close) * n_shares
+        commision = last_close * n_shares * COM
+        cash += pnl - commision
+        active_short_positions.remove(pos)
 
     ## Close ALL Short Positions
     for pos in active_short_positions.copy():
-        cash += (pos.price * n_shares) - (row.Close * n_shares * (1 + COM))
+        cash += (pos.price * n_shares) - (last_close * n_shares * (1 + COM))
         active_short_positions.remove(pos)
 
     portfolio_val = cash
