@@ -46,9 +46,6 @@ def get_signals(df):
     ## Chaikin Money Flow
     df["CMF"] =  ta.volume.chaikin_money_flow(high=df["High"], low=df["Low"], close=df["Price"], volume=df["CVol"], window=20)
 
-    ## Ease of Movement (EoM)
-    #df["EoM"] = ta.volume.ease_of_movement(high=df["Price"], low=["Low"], volume=df["CVol"], window=14)
-
     ## Force Index (FI)
     df["FI"] =  ta.volume.force_index(close=df["Price"], volume=df["CVol"], window=13)
 
