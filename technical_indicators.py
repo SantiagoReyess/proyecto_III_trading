@@ -1,8 +1,12 @@
 import pandas as pd
 import ta
+import numpy as np
 
 def get_signals(df):
-
+    """
+    Calcula y escala los indicadores técnicos utilizando métodos específicos
+    para cada tipo de indicador, evitando distorsiones.
+    """
     # Momentum indicators
     ## RSI (7-day window)
     df["RSI_7"] = ta.momentum.rsi(close=df["Price"], window=7)    
@@ -73,5 +77,29 @@ def get_signals(df):
     df["Ulcer"] = ta.volatility.UlcerIndex(close=df["Price"], window= 14).ulcer_index()
 
     df = df.dropna()
+
+
+        # Grupo 1: Osciladores con rango [0, 100]. Se normalizan a [0, 1].
+    cols_to_normalize_100 = ['RSI_7', 'RSI_14', 'RSI_21', 'Stochastic_Osc', 'Ultimate_Osc', 'MFI', 'TSI', 'ROC']
+    for col in cols_to_normalize_100:
+        df[col] = df[col] / 100.0
+
+        # Grupo 2: Indicadores basados en el precio (medias móviles, bandas).
+        # Se escalan como un porcentaje de desviación del precio actual.
+    price_based_cols = ['Kama', 'BB_High', 'BB_Low', 'BB_Mid']
+    for col in price_based_cols:
+        df[col] = (df[col] - df['Price']) / df['Price']
+
+        # Grupo 3: Indicadores de volatilidad (en escala de precio).
+        # Se normalizan dividiéndolos por el precio para obtener una medida relativa.
+    volatility_cols = ['ATR', 'BB_Width', 'Ulcer']
+    for col in volatility_cols:
+        df[col] = df[col] / df['Price']
+
+        # Grupo 4: Indicadores sin límites definidos (osciladores y volumen).
+        # Se transforman a su cambio porcentual para hacerlos estacionarios y comparables.
+    unbounded_cols = ['Awesome_Osc', 'ADI', 'FI', 'NVI', 'OBV']
+    for col in unbounded_cols:
+        df[col] = df[col].pct_change()
 
     return df
