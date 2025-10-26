@@ -3,9 +3,9 @@ import numpy as np
 
 def label(dataframe, alpha):
 
-    window = 7
+    window = 15
     buy_threshold = alpha
-    sell_threshold = alpha
+    sell_threshold = -alpha
 
     # Calcular retorno futuro (para etiquetas)
     dataframe['future_price'] = dataframe['Price'].shift(-window)

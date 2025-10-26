@@ -14,8 +14,8 @@ def prepare_data_for_model(df, lookback_period, val_size=0.20, test_size=0.20):
     en entrenamiento, validación y prueba.
     """
     # 1. Separar features (X) y target (y)
-    features = df.drop(columns=['Date', 'Price', 'Open', 'High', 'Low', 'CVol', 'Signal'])
-    target = df['Signal']
+    features = df.drop(columns=['Price', 'Open', 'High', 'Low', 'CVol', 'signal', 'future_price', 'future_return'])
+    target = df['signal']
 
     # 2. Crear secuencias
     X_sequences, y_sequences = [], []
@@ -37,12 +37,7 @@ def prepare_data_for_model(df, lookback_period, val_size=0.20, test_size=0.20):
     X_test = X_sequences[test_split_index:]
     y_test = y_sequences[test_split_index:]
 
-    print(f"Forma de X_train: {X_train.shape}")
-    print(f"Forma de X_val:   {X_val.shape}")
-    print(f"Forma de X_test:  {X_test.shape}")
-
     return X_train, y_train, X_test, y_test, X_val, y_val
-
 
 # (Las funciones de creación de modelos se quedan igual)
 def create_dnn_model(input_shape):
@@ -63,7 +58,7 @@ def create_cnn_model(input_shape):
     # (Esta función se queda igual)
     model = Sequential([
         Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=input_shape),
-        MaxPooling1D(pool_size=2),
+        MaxPooling1D(pool_size=1),
         Dropout(0.3),
         Flatten(),
         Dense(50, activation='relu'),
@@ -126,7 +121,7 @@ def run_experiment(model_name, params, X_train, y_train, X_val, y_val, X_test, y
         epochs=params.get('epochs', 100),
         batch_size=params.get('batch_size', 32),
         validation_data=(X_val, y_val),
-        callbacks=[early_stopping],
+        callbacks=[],#early_stopping],
         class_weight=class_weights_dict,
         verbose=2
     )
