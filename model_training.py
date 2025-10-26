@@ -6,8 +6,6 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM, Conv1D, MaxPooling1D, Flatten
 from tensorflow.keras.callbacks import EarlyStopping
-import mlflow
-import mlflow.tensorflow
 
 
 def prepare_data_for_model(df, lookback_period, val_size=0.20, test_size=0.20):
@@ -102,51 +100,41 @@ def get_model_creator(model_name):
         raise ValueError("Nombre de modelo no reconocido.")
 
 
-def run_experiment(params, X_train, y_train, X_val, y_val, X_test, y_test):
+def run_experiment(model_name, params, X_train, y_train, X_val, y_val, X_test, y_test):
     """
-    Ejecuta un único experimento de entrenamiento con MLflow.
-    Usa conjuntos de validación y prueba separados.
-    """
-    mlflow.tensorflow.autolog()
+        Crea, entrena y evalúa un modelo.
+        Devuelve los resultados para que otro módulo los pueda registrar.
+        """
+    print(f"\n--- Entrenando modelo: {model_name} ---")
+    print(f"Parámetros: {params}")
 
-    with mlflow.start_run(run_name=params['model_type']) as run:
-        mlflow.log_params(params)
-        model_name = params['model_type']
-        print(f"\n--- Ejecutando experimento para: {model_name} ---")
-        print(f"Parámetros: {params}")
+    input_shape = (X_train.shape[1], X_train.shape[2])
+    model_creator = get_model_creator(model_name)
+    model = model_creator(input_shape)
 
-        # Para CNN/LSTM, la forma es (timesteps, features)
-        # Para la nueva DNN, la capa Flatten se encarga de la forma
-        input_shape = (X_train.shape[1], X_train.shape[2])
+    weights = class_weight.compute_class_weight(
+        class_weight='balanced',
+        classes=np.unique(y_train),
+        y=y_train
+    )
+    class_weights_dict = dict(enumerate(weights))
 
-        model_creator = get_model_creator(model_name)
-        model = model_creator(input_shape)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
-        weights = class_weight.compute_class_weight(
-            class_weight='balanced',
-            classes=np.unique(y_train),
-            y=y_train
-        )
-        class_weights_dict = dict(enumerate(weights))
+    history = model.fit(
+        X_train, y_train,
+        epochs=params.get('epochs', 100),
+        batch_size=params.get('batch_size', 32),
+        validation_data=(X_val, y_val),
+        callbacks=[early_stopping],
+        class_weight=class_weights_dict,
+        verbose=2
+    )
 
-        early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    print(f"Evaluando el modelo final en el conjunto de prueba...")
+    final_loss, final_accuracy = model.evaluate(X_test, y_test, verbose=0)
 
-        # Usar el conjunto de VALIDACIÓN para el callback y la validación durante el entrenamiento
-        history = model.fit(
-            X_train, y_train,
-            epochs=params.get('epochs', 100),
-            batch_size=params.get('batch_size', 32),
-            validation_data=(X_val, y_val),
-            callbacks=[early_stopping],
-            class_weight=class_weights_dict,
-            verbose=2
-        )
+    print(f"--- Entrenamiento para {model_name} finalizado. Test Accuracy: {final_accuracy:.4f} ---")
 
-        # Usar el conjunto de PRUEBA solo para la evaluación final
-        print(f"Evaluando el modelo final en el conjunto de prueba (datos nunca vistos)...")
-        final_loss, final_accuracy = model.evaluate(X_test, y_test, verbose=0)
-
-        mlflow.log_metric("final_test_accuracy", final_accuracy)
-        mlflow.log_metric("final_test_loss", final_loss)
-
-        print(f"--- Experimento para {model_name} finalizado. Test Accuracy: {final_accuracy:.4f} ---")
+    # Devolvemos lo que creemos util
+    return model, history, final_loss, final_accuracy
