@@ -10,7 +10,7 @@ import mlflow
 import mlflow.tensorflow
 
 
-def prepare_data_for_model(df, lookback_period, val_size=0.15, test_size=0.15):
+def prepare_data_for_model(df, lookback_period, val_size=0.20, test_size=0.20):
     """
     Prepara los datos (que ya vienen escalados) dividiéndolos cronológicamente
     en entrenamiento, validación y prueba.
@@ -43,7 +43,7 @@ def prepare_data_for_model(df, lookback_period, val_size=0.15, test_size=0.15):
     print(f"Forma de X_val:   {X_val.shape}")
     print(f"Forma de X_test:  {X_test.shape}")
 
-    return X_train, X_val, X_test, y_train, y_val, y_test
+    return X_train, y_train, X_test, y_test, X_val, y_val
 
 
 # (Las funciones de creación de modelos se quedan igual)

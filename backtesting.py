@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 
 
-def backtesting(dataframe, stop_loss, take_profit, n_shares):
+def backtesting(dataframe, n_shares):
+
+    stop_loss = 8/100
+    take_profit = 8/100
 
     cash = 1000000
     COM =  0.125/100
@@ -39,8 +42,11 @@ def backtesting(dataframe, stop_loss, take_profit, n_shares):
                 cash += pnl - commision
                 active_short_positions.remove(pos)
 
+        for pos in active_short_positions.copy():
+            cash -= row.Close * pos.n_shares * BORROW_RATE
+
         # Open Long Positions
-        if True == row.buy_signal:
+        if 2 == row.signal:
             cost = row.Close * n_shares * (1+ COM)
 
             if cash > cost:
@@ -53,7 +59,7 @@ def backtesting(dataframe, stop_loss, take_profit, n_shares):
                                               tp = row.Close * (1 + take_profit)))
 
         # Open Short Positions
-        if True == row.sell_signal:
+        if 0 == row.signal:
             cost = row.Close * n_shares * COM
 
             if cash > cost:
