@@ -1,10 +1,7 @@
 from dataclasses import dataclass
 
 
-def backtesting(dataframe, n_shares):
-
-    stop_loss = 8/100
-    take_profit = 8/100
+def backtesting(dataframe, stop_loss, take_profit, n_shares):
 
     cash = 1000000
     COM =  0.125/100
@@ -29,46 +26,46 @@ def backtesting(dataframe, n_shares):
         # Close Long Positions
         for pos in active_long_positions.copy():
 
-            if (pos.sl > row.Close) or (pos.tp < row.Close):
-                cash += row.Close * n_shares * (1 - COM)
+            if (pos.sl > row.Price) or (pos.tp < row.Price):
+                cash += row.Price * n_shares * (1 - COM)
                 active_long_positions.remove(pos)
 
         # Close Short Positions
         for pos in active_short_positions.copy():
 
-            if (pos.sl < row.Close) or (pos.tp > row.Close):
-                pnl = (pos.price - row.Close) * n_shares
-                commision = row.Close * n_shares * COM
+            if (pos.sl < row.Price) or (pos.tp > row.Price):
+                pnl = (pos.price - row.Price) * n_shares
+                commision = row.Price * n_shares * COM
                 cash += pnl - commision
                 active_short_positions.remove(pos)
 
         for pos in active_short_positions.copy():
-            cash -= row.Close * pos.n_shares * BORROW_RATE
+            cash -= row.Price * pos.n_shares * BORROW_RATE
 
         # Open Long Positions
-        if 2 == row.signal:
-            cost = row.Close * n_shares * (1+ COM)
+        if True == row.buy_signal:
+            cost = row.Price * n_shares * (1+ COM)
 
             if cash > cost:
                 cash -= cost
 
                 active_long_positions.append(Operation
-                                             (price = row.Close,
+                                             (price = row.Price,
                                               n_shares = n_shares,
-                                              sl = row.Close * (1 - stop_loss),
-                                              tp = row.Close * (1 + take_profit)))
+                                              sl = row.Price * (1 - stop_loss),
+                                              tp = row.Price * (1 + take_profit)))
 
         # Open Short Positions
-        if 0 == row.signal:
-            cost = row.Close * n_shares * COM
+        if True == row.sell_signal:
+            cost = row.Price * n_shares * COM
 
             if cash > cost:
                 cash -= cost
                 active_short_positions.append(Operation
-                                              (price = row.Close,
+                                              (price = row.Price,
                                                n_shares = n_shares,
-                                               sl = row.Close * (1 + stop_loss),
-                                               tp = row.Close * (1 -  take_profit)))
+                                               sl = row.Price * (1 + stop_loss),
+                                               tp = row.Price * (1 -  take_profit)))
 
         # Value Portfolio for each row
         portfolio_val = 0
@@ -76,16 +73,16 @@ def backtesting(dataframe, n_shares):
 
         ## Value Long positions
         for pos in active_long_positions.copy():
-            portfolio_val += row.Close * pos.n_shares
+            portfolio_val += row.Price * pos.n_shares
 
         ## Value Short Positions
         for pos in active_short_positions.copy():
-            portfolio_val += (pos.price * n_shares) - (row.Close * n_shares)
+            portfolio_val += (pos.price * n_shares) - (row.Price * n_shares)
 
         # Add portfolio value to historic
         portfolio_historic.append(portfolio_val)
 
-    last_close = data["Close"].iloc[-1]
+    last_close = data["Price"].iloc[-1]
 
     ## Close ALL Long Positions
     for pos in active_long_positions.copy():

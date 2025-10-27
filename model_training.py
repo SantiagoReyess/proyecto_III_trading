@@ -14,7 +14,7 @@ def prepare_data_for_model(df, lookback_period, val_size=0.20, test_size=0.20):
     en entrenamiento, validación y prueba.
     """
     # 1. Separar features (X) y target (y)
-    features = df.drop(columns=['Price', 'Open', 'High', 'Low', 'CVol', 'signal', 'future_price', 'future_return'])
+    features = df.drop(columns=['Open', 'High', 'Low', 'CVol', 'signal', 'future_price', 'future_return'])
     target = df['signal']
 
     # 2. Crear secuencias
