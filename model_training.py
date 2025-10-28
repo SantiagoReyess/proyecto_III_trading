@@ -12,9 +12,30 @@ import seaborn as sns
 
 def prepare_data_for_model(df, lookback_period, val_size=0.20, test_size=0.20):
     """
-    Prepara los datos (que ya vienen escalados) dividiéndolos cronológicamente
-    en entrenamiento, validación y prueba.
+    Prepares and splits already-scaled data into chronological training,
+    validation, and test sets.
+
+    This function transforms a time-series DataFrame into a format suitable for
+    sequence models (like LSTMs or CNNs) using a sliding window approach. It then
+    splits the data chronologically to prevent lookahead bias.
+
+
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the features and target signal.
+                           Features are assumed to be pre-scaled.
+        lookback_period (int): The number of time steps to include in each
+                               input sequence (X).
+        val_size (float, optional): The proportion of the data to use for the
+                                    validation set. Defaults to 0.20.
+        test_size (float, optional): The proportion of the data to use for the
+                                     test set. Defaults to 0.20.
+
+    Returns:
+        tuple: A tuple containing six NumPy arrays:
+               (X_train, y_train, X_test, y_test, X_val, y_val).
     """
+
     # 1. Separar features (X) y target (y)
     features = df.drop(columns=['Open', 'High', 'Low', 'signal', 'future_price', 'future_return', 'Date'])
     target = df['signal']

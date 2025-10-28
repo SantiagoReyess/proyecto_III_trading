@@ -5,9 +5,28 @@ import matplotlib.pyplot as plt
 
 def analyze_data_drift(X_train, X_test, feature_names, alpha=0.05):
     """
-    Aplica la prueba KS para comparar distribuciones entre train y test.
-    Devuelve un DataFrame con el estadístico KS y el p-value para cada feature.
+    Analyzes data drift between training and testing sets using the KS test.
+
+    This function iterates through each feature, comparing its distribution in the
+    training set (X_train) against the testing set (X_test) using the
+    two-sample Kolmogorov-Smirnov (KS) test. It returns a summary DataFrame
+    indicating whether a statistically significant drift was detected for each feature.
+
+    Args:
+        X_train (np.ndarray): The training data, where columns represent features.
+        X_test (np.ndarray): The testing data, with the same feature columns.
+        feature_names (list of str): A list of names for the features.
+        alpha (float, optional): The significance level to determine drift.
+                                 If the p-value is less than alpha, drift is
+                                 considered significant. Defaults to 0.05.
+
+    Returns:
+        pd.DataFrame: A DataFrame with the results of the drift analysis,
+                      containing columns for "Feature", "KS_Statistic", "P_Value",
+                      and "Drift" (Yes/No). The DataFrame is sorted by the
+                      KS statistic in descending order.
     """
+
     drift_results = []
     for i, col in enumerate(feature_names):
         # Extraemos la columna correspondiente
@@ -35,9 +54,33 @@ def analyze_data_drift(X_train, X_test, feature_names, alpha=0.05):
 
 
 def temporal_drift_analysis(df, feature_cols, baseline_size=0.3, window_size=0.1, alpha=0.05):
+     """
+    Analyzes data drift over time using a moving window approach.
+
+    This function establishes a baseline dataset from the initial portion of the
+    DataFrame. It then creates subsequent, non-overlapping windows of data and
+    compares the distribution of each feature in each window against the baseline
+    using the KS test. This is useful for identifying when the statistical
+    properties of the data change over time.
+
+
+    Args:
+        df (pd.DataFrame): The input DataFrame containing time-series data.
+                           Must include a 'Date' column.
+        feature_cols (list of str): The names of the feature columns to analyze for drift.
+        baseline_size (float, optional): The proportion of the initial data to use
+                                         as the stable baseline. Defaults to 0.3 (30%).
+        window_size (float, optional): The proportion of data to use for each
+                                       subsequent analysis window. Defaults to 0.1 (10%).
+        alpha (float, optional): The significance level for the KS test. Defaults to 0.05.
+
+    Returns:
+        pd.DataFrame: A DataFrame where each row corresponds to a time window.
+                      Columns include the KS statistic for each feature in that
+                      window and the overall percentage of features that drifted.
+                      The index is set to the start date of the window.
     """
-    Analiza el data drift de forma temporal con ventanas móviles usando la columna 'Date' como referencia.
-    """
+
 
     # Asegurarse de que 'Date' sea datetime
     df['Date'] = pd.to_datetime(df['Date'])

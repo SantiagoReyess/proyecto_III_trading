@@ -3,35 +3,25 @@ import pandas as pd
 
 def calculate_metrics(portfolio_historic):
     """
-        Calcula métricas de desempeño financiero a partir del valor histórico de un portafolio.
+    Calculates financial performance metrics from a portfolio's value history.
 
-        Esta función estima métricas anualizadas de desempeño
-        con base en una serie temporal de valores de portafolio.
+    This function takes a time series of portfolio values and computes several
+    annualized performance and risk metrics. It assumes the input data points
+    are on a daily frequency, based on the annualization factor of 252.
 
-        Parameters
-        ----------
-        portfolio_historic :
-            Serie temporal con los valores históricos del portafolio
+    Args:
+        portfolio_historic (list or pd.Series): A time series of the
+                                                portfolio's historical values.
 
-        Returns
-        -------
-        dict
-            Diccionario con las métricas calculadas:
-
-            - **Annualized_Return** : float
-              Retorno promedio anualizado del portafolio.
-            - **Annualized_Volatility** : float
-              Volatilidad anualizada de los rendimientos horarios.
-            - **Max_Drawdown** : float
-              Máxima caída desde un pico hasta un valle en el valor del portafolio.
-            - **Calmar_Ratio** : float
-              Relación entre el retorno anualizado y el máximo drawdown.
-            - **Sortino_Ratio** : float
-              Relación entre el retorno anualizado y la volatilidad de las pérdidas (downside risk).
-            - **Win_Rate** : float
-              Proporción de rendimientos horarios positivos.
-
-        """
+    Returns:
+        dict: A dictionary containing the calculated metrics:
+            - "Annualized_Return": The average return on an annual basis.
+            - "Annualized_Volatility": The annualized standard deviation of returns (risk).
+            - "Max_Drawdown": The largest percentage drop from a peak to a subsequent trough.
+            - "Calmar_Ratio": Annualized return divided by the max drawdown.
+            - "Sortino_Ratio": Annualized return divided by the downside volatility.
+            - "Win_Rate": The percentage of periods (days) with a positive return.
+    """
 
     HOURS = 252 # Number of days per year
     data = pd.DataFrame()

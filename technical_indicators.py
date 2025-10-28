@@ -4,9 +4,25 @@ import numpy as np
 
 def get_signals(df):
     """
-    Calcula y escala los indicadores técnicos utilizando métodos específicos
-    para cada tipo de indicador, evitando distorsiones.
+    Calculates a comprehensive set of technical indicators and then applies
+    domain-specific scaling to make them suitable for a machine learning model.
+
+    The function first generates indicators grouped by type (Momentum, Volume,
+    Volatility). Then, instead of using a generic scaler (like MinMaxScaler or
+    StandardScaler), it applies custom normalization techniques based on the
+    intrinsic properties of each indicator to preserve its meaning and improve
+    model performance.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing at least 'Price', 'High',
+                           'Low', and 'CVol' (volume) columns.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the new, scaled indicator features,
+                      ready for use in a machine learning model. Rows with NaN
+                      values resulting from calculations are dropped.
     """
+
     # Momentum indicators
     ## RSI (7-day window)
     df["RSI_7"] = ta.momentum.rsi(close=df["Price"], window=7)    

@@ -7,7 +7,29 @@ from model_training import run_experiment
 
 def run_mlflow_experiment(params, X_train, y_train, X_val, y_val, X_test, y_test):
     """
-    Ejecuta un experimento de entrenamiento completo utilizando MLflow para el tracking.
+    Executes a complete training experiment and tracks it using MLflow.
+
+    This function orchestrates a single experiment run. It starts an MLflow run,
+    logs the specified hyperparameters, calls the main training function,
+    and then logs the resulting performance metrics and the trained model as an
+    artifact to the MLflow tracking server. This approach ensures that each
+
+    experiment is reproducible and its results are centrally managed.
+
+
+    Args:
+        params (dict): A dictionary of hyperparameters and settings for the run.
+                       This dictionary will be logged directly to MLflow.
+                       Example: {'model_type': 'LSTM', 'epochs': 50, 'lr': 0.001}
+        X_train (np.ndarray): Training feature data.
+        y_train (np.ndarray): Training target data.
+        X_val (np.ndarray): Validation feature data.
+        y_val (np.ndarray): Validation target data.
+        X_test (np.ndarray): Test feature data.
+        y_test (np.ndarray): Test target data.
+
+    Returns:
+        The trained model object returned by the run_experiment function.
     """
 
     with mlflow.start_run(run_name=params['model_type']) as run:
