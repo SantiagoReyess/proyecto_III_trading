@@ -1,3 +1,5 @@
+import mlflow
+import os
 from data_download import data_download
 from technical_indicators import get_signals
 from data_labeling import label
@@ -9,6 +11,9 @@ from backtesting import backtesting
 from mlflow_manager import run_mlflow_experiment
 from data_drift import analyze_data_drift
 from data_drift import temporal_drift_analysis
+
+# 1. Definir una ubicación central y única para la base de datos de MLflow.
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
 
 def main():
 
@@ -77,17 +82,23 @@ def main():
     plt.xticks(rotation=45)
     plt.show()
 
+    ###
 
-    params = {"epochs": 20, "batch_size": 10}
-    model_dnn, history_dnn, final_loss_dnn, final_accuracy_dnn = run_experiment(model_name="dnn", params=params,
-                                                                X_train=X_train, y_train=y_train,
-                                                                X_test=X_test, y_test=y_test,
-                                                                X_val=X_val, y_val=y_val)
+    # 1. Ejecutar y registrar el experimento para DNN
+    print("\n--- Iniciando experimento MLflow para DNN ---")
+    params_dnn = {"model_type": "dnn", "epochs": 100, "batch_size": 10, "lookback": lookback_period}
+    model_dnn = run_mlflow_experiment(params=params_dnn,
+                                      X_train=X_train, y_train=y_train,
+                                      X_val=X_val, y_val=y_val,
+                                      X_test=X_test, y_test=y_test)
 
-    model_cnn, history_cnn, final_loss_cnn, final_accuracy_cnn = run_experiment(model_name="cnn", params=params,
-                                                                X_train=X_train, y_train=y_train,
-                                                                X_test=X_test, y_test=y_test,
-                                                                X_val=X_val, y_val=y_val)
+    # 2. Ejecutar y registrar el experimento para CNN
+    print("\n--- Iniciando experimento MLflow para CNN ---")
+    params_cnn = {"model_type": "cnn", "epochs": 100, "batch_size": 10, "lookback": lookback_period}
+    model_cnn = run_mlflow_experiment(params=params_cnn,
+                                      X_train=X_train, y_train=y_train,
+                                      X_val=X_val, y_val=y_val,
+                                      X_test=X_test, y_test=y_test)
 
     print("\n--- Iniciando Backtesting Comparativo ---")
 
@@ -103,9 +114,9 @@ def main():
     test_df_dnn['buy_signal'] = (predictions_dnn == 2)
     test_df_dnn['sell_signal'] = (predictions_dnn == 0)
 
-    stop_loss = 0.10
-    take_profit = 0.05
-    n_shares = 50
+    stop_loss = 0.05
+    take_profit = 0.10
+    n_shares = 100
 
     portfolio_historic_dnn = backtesting(dataframe=test_df_dnn,
                                          stop_loss=stop_loss,
@@ -143,8 +154,8 @@ def main():
 
     # --- Gráfica comparativa ---
     plt.figure(figsize=(14, 7))
-    plt.plot(portfolio_historic_dnn, label='Estrategia DNN', color='blue')
-    plt.plot(portfolio_historic_cnn, label='Estrategia CNN', color='red', linestyle='--')
+    plt.plot(portfolio_historic_dnn, label='Estrategia DNN', color='darkblue')
+    plt.plot(portfolio_historic_cnn, label='Estrategia CNN', color='darkred')
 
     plt.title("Comparación de Estrategias: Evolución del Capital", fontsize=16)
     plt.xlabel("Periodos de Tiempo (Días)", fontsize=12)

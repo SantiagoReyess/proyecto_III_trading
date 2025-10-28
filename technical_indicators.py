@@ -99,4 +99,12 @@ def get_signals(df):
     for col in unbounded_cols:
         df[col] = df[col].pct_change()
 
+        # Grupo 5: Escalar las series de tiempo principales (Precio y Volumen)
+        # Las convertimos a su cambio porcentual para que el modelo vea su variación.
+    price_vol_cols = ['Price', 'CVol']
+    for col in price_vol_cols:
+        df[col] = df[col].pct_change()
+
+    df = df.dropna()
+
     return df

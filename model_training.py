@@ -14,7 +14,7 @@ def prepare_data_for_model(df, lookback_period, val_size=0.20, test_size=0.20):
     en entrenamiento, validación y prueba.
     """
     # 1. Separar features (X) y target (y)
-    features = df.drop(columns=['Open', 'High', 'Low', 'CVol', 'signal', 'future_price', 'future_return'])
+    features = df.drop(columns=['Open', 'High', 'Low', 'signal', 'future_price', 'future_return', 'Date'])
     target = df['signal']
 
     # 2. Crear secuencias
@@ -121,7 +121,7 @@ def run_experiment(model_name, params, X_train, y_train, X_val, y_val, X_test, y
         epochs=params.get('epochs', 100),
         batch_size=params.get('batch_size', 32),
         validation_data=(X_val, y_val),
-        callbacks=[],#early_stopping],
+        callbacks=[early_stopping],
         class_weight=class_weights_dict,
         verbose=2
     )
