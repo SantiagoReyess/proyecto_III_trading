@@ -3,9 +3,9 @@ from dataclasses import dataclass
 
 def backtesting(dataframe, stop_loss, take_profit, n_shares):
 
-    cash = 1000000
+    cash = 10000
     COM =  0.125/100
-    BORROW_RATE = 0.25 / 100
+    BORROW_RATE = 0.25 / 100 / 252
 
     @dataclass
     class Operation:

@@ -6,6 +6,8 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM, Conv1D, MaxPooling1D, Flatten
 from tensorflow.keras.callbacks import EarlyStopping
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def prepare_data_for_model(df, lookback_period, val_size=0.20, test_size=0.20):
@@ -133,3 +135,31 @@ def run_experiment(model_name, params, X_train, y_train, X_val, y_val, X_test, y
 
     # Devolvemos lo que creemos util
     return model, history, final_loss, final_accuracy
+
+def plot_class_distribution(y_train):
+    """
+    Calcula, imprime y grafica la distribución de clases para y_train.
+    """
+    # Contar las ocurrencias de cada clase
+    unique_classes, counts = np.unique(y_train, return_counts=True)
+    # Asegurarse de que las clases son strings para el mapeo
+    unique_classes_str = [str(cls) for cls in unique_classes]
+    class_distribution = dict(zip(unique_classes_str, counts))
+
+    # Imprimir los resultados
+    print("Distribución de clases en el conjunto de entrenamiento:")
+    total_samples = len(y_train)
+    for cls, count in class_distribution.items():
+        label = "Sell (0)" if cls == '0' else "Hold (1)" if cls == '1' else "Buy (2)"
+        percentage = (count / total_samples) * 100
+        print(f"  - Clase {label}: {count} muestras ({percentage:.2f}%)")
+
+    # Crear el gráfico de barras
+    plt.figure(figsize=(8, 5))
+    sns.barplot(x=list(class_distribution.keys()), y=list(class_distribution.values()))
+    plt.title('Distribución de Señales en los Datos de Entrenamiento')
+    plt.xlabel('Clase de Señal (0: Sell, 1: Hold, 2: Buy)')
+    plt.ylabel('Número de Muestras')
+    # Usamos los strings para las etiquetas
+    plt.xticks(ticks=range(len(unique_classes_str)), labels=['Sell (0)', 'Hold (1)', 'Buy (2)'])
+    plt.show()

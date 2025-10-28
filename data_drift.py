@@ -36,20 +36,11 @@ def analyze_data_drift(X_train, X_test, feature_names, alpha=0.05):
 
 def temporal_drift_analysis(df, feature_cols, baseline_size=0.3, window_size=0.1, alpha=0.05):
     """
-    Analiza el data drift de forma temporal con ventanas móviles.
-
-    Parámetros:
-    -----------
-    df : DataFrame con tus features (ordenado temporalmente)
-    feature_cols : lista de columnas a analizar
-    baseline_size : proporción inicial usada como referencia (ej. 0.3 = 30%)
-    window_size : tamaño de cada ventana deslizante como proporción (ej. 0.1 = 10%)
-    alpha : nivel de significancia para el KS test
-
-    Devuelve:
-    ----------
-    drift_results : DataFrame con drift promedio por ventana y por feature
+    Analiza el data drift de forma temporal con ventanas móviles usando la columna 'Date' como referencia.
     """
+
+    # Asegurarse de que 'Date' sea datetime
+    df['Date'] = pd.to_datetime(df['Date'])
 
     n = len(df)
     base_end = int(n * baseline_size)
@@ -63,13 +54,11 @@ def temporal_drift_analysis(df, feature_cols, baseline_size=0.3, window_size=0.1
         end = start + window_len
         current_window = df[feature_cols].iloc[start:end]
 
-        if isinstance(df.index[start], (np.datetime64, pd.Timestamp)):
-            window_label = f"{pd.to_datetime(df.index[start]).date()} → {pd.to_datetime(df.index[end - 1]).date()}"
-        else:
-            window_label = f"{start} → {end - 1}"
+        # Guardamos la fecha de cada de la ventana
+        window_start_date = df['Date'].iloc[start]
 
         drift_window = {}
-        drift_window["Window"] = window_label
+        drift_window["Window_Start"] = window_start_date
         drift_window["Start_Index"] = start
         drift_window["End_Index"] = end
 
@@ -88,6 +77,6 @@ def temporal_drift_analysis(df, feature_cols, baseline_size=0.3, window_size=0.1
         drift_records.append(drift_window)
 
     drift_df = pd.DataFrame(drift_records)
-    drift_df.set_index("Window", inplace=True)
+    drift_df.set_index("Window_Start", inplace=True)  # usamos la fecha como índice
     return drift_df
 

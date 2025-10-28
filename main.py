@@ -11,6 +11,9 @@ from backtesting import backtesting
 from mlflow_manager import run_mlflow_experiment
 from data_drift import analyze_data_drift
 from data_drift import temporal_drift_analysis
+from metrics import calculate_metrics
+from model_training import plot_class_distribution
+
 
 # 1. Definir una ubicación central y única para la base de datos de MLflow.
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
@@ -24,11 +27,13 @@ def main():
     data = get_signals(data)
 
     ## Label the dataframe (0 = sell, 1 = hold, 2 = buy)
-    data = label(data, alpha=0.05)
+    data = label(data, alpha=0.8)
 
     ## Prepare the data for the model
     lookback_period = 50
     X_train, y_train, X_test, y_test, X_val, y_val = prepare_data_for_model(df=data, lookback_period=lookback_period)
+
+    plot_class_distribution(y_train)
 
     X_train = X_train.astype(np.float32)
     X_test = X_test.astype(np.float32)
@@ -38,7 +43,7 @@ def main():
     y_val = y_val.astype(np.int32)
 
     ## Data Drift
-    print("\n--- Análisis de Data Drift (Kolmogorov-Smirnov) ---")
+    print("\n--- Data Drift Analysis (Kolmogorov-Smirnov) ---")
 
     # Si tus X_train y X_test vienen de prepare_data_for_model(), necesitarás los nombres originales de las features
     features = [
@@ -63,30 +68,32 @@ def main():
              color=['red' if d == "Sí" else 'green' for d in drift_df["Drift"]])
     plt.xlabel("KS Statistic")
     plt.ylabel("Feature")
-    plt.title("Análisis de Data Drift (KS Test)")
+    plt.title("Data Drift Analysis (KS Test)")
     plt.gca().invert_yaxis()
     plt.grid(True, alpha=0.2)
-    plt.show()
+    #   plt.show()
 
     # --- USO ---
     feature_cols = features
+    drift_df = data_download("PriceHistory.xlsx")
     drift_df = temporal_drift_analysis(data, features, baseline_size=0.3, window_size=0.1)
 
     # --- VISUALIZACIÓN DEL DRIFT GLOBAL ---
     plt.figure(figsize=(12, 6))
-    plt.plot(drift_df["Drift_Features_%"], marker='o', color='crimson')
-    plt.title("Evolución Temporal del Data Drift (%)", fontsize=14)
-    plt.xlabel("Ventana temporal")
-    plt.ylabel("% de Features con Drift significativo (p<0.05)")
+    plt.plot(drift_df.index, drift_df["Drift_Features_%"], marker='o', color='purple')
+    plt.title("Data Drift (%) Through Time", fontsize=14)
+    plt.xlabel("Date")
+    plt.ylabel("% of Features with Drift (p<0.05)")
     plt.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
-    plt.show()
+    plt.tight_layout()
+    #plt.show()
 
     ###
 
     # 1. Ejecutar y registrar el experimento para DNN
     print("\n--- Iniciando experimento MLflow para DNN ---")
-    params_dnn = {"model_type": "dnn", "epochs": 100, "batch_size": 10, "lookback": lookback_period}
+    params_dnn = {"model_type": "dnn", "epochs": 150, "batch_size": 10, "lookback": lookback_period}
     model_dnn = run_mlflow_experiment(params=params_dnn,
                                       X_train=X_train, y_train=y_train,
                                       X_val=X_val, y_val=y_val,
@@ -94,7 +101,7 @@ def main():
 
     # 2. Ejecutar y registrar el experimento para CNN
     print("\n--- Iniciando experimento MLflow para CNN ---")
-    params_cnn = {"model_type": "cnn", "epochs": 100, "batch_size": 10, "lookback": lookback_period}
+    params_cnn = {"model_type": "cnn", "epochs": 150, "batch_size": 10, "lookback": lookback_period}
     model_cnn = run_mlflow_experiment(params=params_cnn,
                                       X_train=X_train, y_train=y_train,
                                       X_val=X_val, y_val=y_val,
@@ -125,7 +132,7 @@ def main():
 
     # --- Backtest para el modelo CNN ---
     print("2. Ejecutando backtest para CNN...")
-    predictions_cnn_prob = model_cnn.predict(X_test)
+    predictions_cnn_prob = model_cnn.predict(X_val) ###############################################################
     predictions_cnn = np.argmax(predictions_cnn_prob, axis=1)
 
     test_df_cnn = test_df_base.copy()
@@ -145,24 +152,21 @@ def main():
     final_capital_cnn = portfolio_historic_cnn[-1]
     returns_cnn = (final_capital_cnn / initial_capital - 1) * 100
 
-    print("\n--- Resultados Finales del Backtesting ---")
-    print(f"Capital Inicial: ${initial_capital:,.2f}")
-    print("-" * 35)
-    print(f"Estrategia DNN - Capital Final: ${final_capital_dnn:,.2f} | Rendimiento: {returns_dnn:.2f}%")
-    print(f"Estrategia CNN - Capital Final: ${final_capital_cnn:,.2f} | Rendimiento: {returns_cnn:.2f}%")
-    print("-" * 35)
+    metrics_dnn = calculate_metrics(portfolio_historic_dnn)
+    metrics_cnn = calculate_metrics(portfolio_historic_cnn)
 
     # --- Gráfica comparativa ---
     plt.figure(figsize=(14, 7))
-    plt.plot(portfolio_historic_dnn, label='Estrategia DNN', color='darkblue')
-    plt.plot(portfolio_historic_cnn, label='Estrategia CNN', color='darkred')
+    plt.plot(portfolio_historic_dnn, label='DNN Strategy', color='darkblue')
+    plt.plot(portfolio_historic_cnn, label='CNN Strategy', color='darkred')
 
-    plt.title("Comparación de Estrategias: Evolución del Capital", fontsize=16)
-    plt.xlabel("Periodos de Tiempo (Días)", fontsize=12)
-    plt.ylabel("Valor del Portafolio ($)", fontsize=12)
+    plt.title("Model Comparisons", fontsize=16)
+    plt.xlabel("Time", fontsize=12)
+    plt.ylabel("Portfolio Value ($)", fontsize=12)
     plt.legend()
     plt.grid(True)
     plt.show()
+
 
 
 if __name__ == "__main__":
