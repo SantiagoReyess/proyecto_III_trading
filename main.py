@@ -24,10 +24,10 @@ def main():
     data = get_signals(data)
 
     ## Label the dataframe (0 = sell, 1 = hold, 2 = buy)
-    data = label(data, alpha=0.02)
+    data = label(data, alpha=0.05)
 
     ## Prepare the data for the model
-    lookback_period = 25
+    lookback_period = 50
     X_train, y_train, X_test, y_test, X_val, y_val = prepare_data_for_model(df=data, lookback_period=lookback_period)
 
     X_train = X_train.astype(np.float32)
@@ -65,7 +65,7 @@ def main():
     plt.ylabel("Feature")
     plt.title("Análisis de Data Drift (KS Test)")
     plt.gca().invert_yaxis()
-    plt.grid(True, alpha=0.3)
+    plt.grid(True, alpha=0.2)
     plt.show()
 
     # --- USO ---
@@ -114,9 +114,9 @@ def main():
     test_df_dnn['buy_signal'] = (predictions_dnn == 2)
     test_df_dnn['sell_signal'] = (predictions_dnn == 0)
 
-    stop_loss = 0.05
+    stop_loss = 0.10
     take_profit = 0.10
-    n_shares = 100
+    n_shares = 1200
 
     portfolio_historic_dnn = backtesting(dataframe=test_df_dnn,
                                          stop_loss=stop_loss,
