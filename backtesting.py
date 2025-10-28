@@ -84,17 +84,21 @@ def backtesting(dataframe, stop_loss, take_profit, n_shares):
 
     last_close = data["Price"].iloc[-1]
 
+
+    '''
     ## Close ALL Long Positions
     for pos in active_long_positions.copy():
         pnl = (pos.price - last_close) * n_shares
         commision = last_close * n_shares * COM
         cash += pnl - commision
-        active_short_positions.remove(pos)
+        active_long_positions.remove(pos)
 
     ## Close ALL Short Positions
     for pos in active_short_positions.copy():
         cash += (pos.price * n_shares) - (last_close * n_shares * (1 + COM))
         active_short_positions.remove(pos)
+    
+    '''
 
     portfolio_val = cash
     portfolio_historic.append(portfolio_val)

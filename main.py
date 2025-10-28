@@ -7,6 +7,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from backtesting import backtesting
 from mlflow_manager import run_mlflow_experiment
+from data_drift import analyze_data_drift
+from data_drift import temporal_drift_analysis
 
 def main():
 
@@ -30,7 +32,53 @@ def main():
     y_test = y_test.astype(np.int32)
     y_val = y_val.astype(np.int32)
 
-    params = {"epochs": 100, "batch_size": 10}
+    ## Data Drift
+    print("\n--- Análisis de Data Drift (Kolmogorov-Smirnov) ---")
+
+    # Si tus X_train y X_test vienen de prepare_data_for_model(), necesitarás los nombres originales de las features
+    features = [
+        'RSI_7', 'RSI_14', 'RSI_21',
+        'Awesome_Osc', 'Kama', 'ROC',
+        'Stochastic_Osc', 'Stochastic_RSI', 'TSI', 'Ultimate_Osc',
+        'ADI', 'CMF', 'FI', 'MFI', 'NVI', 'OBV',
+        'ATR', 'BB_High', 'BB_Low', 'BB_Mid', 'BB_Width',
+        'Ulcer', 'Price'
+    ]
+
+    # Ejecutar análisis
+    drift_df = analyze_data_drift(X_train.reshape(X_train.shape[0], -1)[:, :len(features)],
+                                  X_test.reshape(X_test.shape[0], -1)[:, :len(features)],
+                                  feature_names=features)
+
+    print(drift_df)
+
+    # Visualización
+    plt.figure(figsize=(10, 6))
+    plt.barh(drift_df["Feature"], drift_df["KS_Statistic"],
+             color=['red' if d == "Sí" else 'green' for d in drift_df["Drift"]])
+    plt.xlabel("KS Statistic")
+    plt.ylabel("Feature")
+    plt.title("Análisis de Data Drift (KS Test)")
+    plt.gca().invert_yaxis()
+    plt.grid(True, alpha=0.3)
+    plt.show()
+
+    # --- USO ---
+    feature_cols = features
+    drift_df = temporal_drift_analysis(data, features, baseline_size=0.3, window_size=0.1)
+
+    # --- VISUALIZACIÓN DEL DRIFT GLOBAL ---
+    plt.figure(figsize=(12, 6))
+    plt.plot(drift_df["Drift_Features_%"], marker='o', color='crimson')
+    plt.title("Evolución Temporal del Data Drift (%)", fontsize=14)
+    plt.xlabel("Ventana temporal")
+    plt.ylabel("% de Features con Drift significativo (p<0.05)")
+    plt.grid(True, alpha=0.3)
+    plt.xticks(rotation=45)
+    plt.show()
+
+
+    params = {"epochs": 20, "batch_size": 10}
     model_dnn, history_dnn, final_loss_dnn, final_accuracy_dnn = run_experiment(model_name="dnn", params=params,
                                                                 X_train=X_train, y_train=y_train,
                                                                 X_test=X_test, y_test=y_test,
@@ -55,9 +103,9 @@ def main():
     test_df_dnn['buy_signal'] = (predictions_dnn == 2)
     test_df_dnn['sell_signal'] = (predictions_dnn == 0)
 
-    stop_loss = 0.05
-    take_profit = 0.10
-    n_shares = 100
+    stop_loss = 0.10
+    take_profit = 0.05
+    n_shares = 50
 
     portfolio_historic_dnn = backtesting(dataframe=test_df_dnn,
                                          stop_loss=stop_loss,
